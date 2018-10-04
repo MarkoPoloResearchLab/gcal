@@ -180,7 +180,7 @@ func main() {
 		}
 	}
 
-	// parse.Parse("AWS reInvent 2018.html")
+	// parse.Parse("input/AWS reInvent 2018.html")
 	// events := parse.CalendarEvents("AWS reInvent 2018.html")
 
 	// rand.Seed(time.Now().Unix())
