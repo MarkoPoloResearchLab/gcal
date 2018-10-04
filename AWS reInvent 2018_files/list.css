@@ -1,0 +1,121 @@
+.listItem {
+	padding: 5px;
+	clear: right;
+	border-top: 1px solid #EEE;
+	min-height: 25px;
+	font-size: 14px;
+}
+.listItem:hover {
+	background: #F4F4F4;
+	cursor: pointer;
+}
+.listItem b {
+	font-size: 14px;
+	font-weight: normal;
+	line-height: 25px;
+}
+.listNoLink{
+	cursor: default;
+}
+.listScroll {
+	border: 1px solid #CCC;
+	overflow-y: auto;
+	clear: both;
+}
+.listScroll button{
+	height: 25px;
+	width: 25px;
+	border: none;
+}
+.listScroll .listCog{
+	background: url(../images/list/list_cog.png) no-repeat center center;
+}
+.listScroll .listEdit {
+	background-image: url(../images/list/list_edit.png);
+	cursor: pointer;
+}
+.listScroll .listItem .listEditText {
+	display: none;
+	margin-top: 7px;
+	margin-right: 5px;
+	text-decoration: underline;
+	color: #339;
+}
+.listScroll .listItem:hover .listEditText {
+	display: inline
+}
+.listScroll .listItem span {
+	display: block;
+	color: #888;
+	font-size: 11px;
+}
+.listScroll .listItem:first-child{
+	border: none;
+}
+.listScrollSide {
+	margin-right: 230px;
+}
+.listSide {
+	position: fixed;
+	top: 109px;
+	right: 15px;
+	width: 200px;
+	background: #F4F4F4;
+	border: 1px solid #CCC;
+	padding: 10px;
+}
+.listSide button {
+	width: 100%;
+	display: block;
+	margin: 5px auto;
+}
+.listSide .listInstruct {
+	text-align: justify;
+	display: block;
+	margin-top: 10px;
+	font-style: normal;
+}
+.listInstruct {
+	display: block;
+	color: #888;
+	margin-bottom: 10px;
+	font-style: italic;
+}
+.listTable {
+	border: 1px solid #D0D0D0;
+	width: 100%;
+}
+ul.listTools{
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+	position: absolute;
+	border: 1px solid #ccc;
+	background: #f8f8f8;
+	height: auto;
+	float: none;
+	-webkit-box-shadow: 1px 3px 10px 2px rgba(50, 70, 50, .5);
+	-moz-box-shadow: 1px 3px 10px 2px rgba(50, 70, 50, .5);
+	box-shadow: 1px 3px 10px 2px rgba(50, 70, 50, .5);
+	display: none;
+}
+ul.listTools li{
+	padding-left: 40px;
+	background: no-repeat 5px center;
+	line-height: 35px;
+	padding-right: 10px;
+	clear: both;
+	border-top: 1px solid #ddd;
+}
+ul.listTools li:first-child{
+	border: none;
+}
+ul.listTools li:hover{
+	cursor: pointer;
+	background-color: #eee;
+}
+ul.listTools li.listEdit{background-image: url(../images/list/list_edit.png)}
+ul.listTools li.listDelete{background-image: url(../images/list/list_delete.png)}
+ul.listTools li.listAdd, .listItem .listAdd{background-image: url(../images/list/list_add.png)}
+ul.listTools li.listAbout, .listItem .listAbout{background-image: url(../images/list/list_about.png)}
+ul.listTools li.listCheck{background-image: url(../images/list/list_check.png)}

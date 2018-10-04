@@ -1,0 +1,30 @@
+@import url("../resultList.css");
+
+#interestsTabs{
+	font-size: 12px;
+	border: none;
+}
+
+#interestsTabs, 
+#interestsTabs .ui-tabs-panel{
+	padding: 0px;
+}
+
+.stars-off{
+	width: 80px;
+	display: inline-block;
+	float: left;
+}
+.stars-off, .stars-on {
+    position: relative;
+    height: 16px;
+    background: url(../../jquery/stars/images/stars.gif) repeat-x 0 -32px;
+}
+.stars-on {
+    position: absolute;
+    background-position: 0 -48px;
+}
+.rating{
+	padding: 2px 5px;
+	display: inline-block;
+}
