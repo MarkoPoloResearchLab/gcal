@@ -12,3 +12,5 @@
 *.out
 token.json
 credentials.json
+// compiled binary
+gcal
