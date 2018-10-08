@@ -4,21 +4,21 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/calendar/v3"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"time"
+
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/calendar/v3"
 )
 
 var (
-	httpPort int
-	httpIP   string
+	credentialsFile string
 )
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -159,24 +159,17 @@ func allCalendars(srv *calendar.Service) []*calendar.CalendarListEntry {
 
 func init() {
 	const (
-		defaultIP   = utils.EmptyString
-		defaultPort = 8080
-		pUsage      = "pass -p=<port> to start HTTP server on a given port"
-		portUsage   = "pass -port=<port> to start HTTP server on a given port"
-		iUsage      = "pass -i=<IP> to start HTTP server on a given IP"
-		ipUsage     = "pass -ip=<IP> to start HTTP server on a given IP"
+		defaultCredentialsFile = "credentials.json"
+		credentialsFileUsage   = "pass -c=<credentialsFile> to read GCal credentials from"
 	)
 
-	flag.IntVar(&httpPort, "port", defaultPort, portUsage)
-	flag.IntVar(&httpPort, "p", defaultPort, pUsage)
-	flag.StringVar(&httpIP, "ip", defaultIP, ipUsage)
-	flag.StringVar(&httpIP, "i", defaultIP, iUsage)
+	flag.StringVar(&credentialsFile, "c", defaultCredentialsFile, credentialsFileUsage)
 }
 
 func main() {
 	flag.Parse()
 
-	b, err := ioutil.ReadFile("credentials.json")
+	b, err := ioutil.ReadFile(credentialsFile)
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
