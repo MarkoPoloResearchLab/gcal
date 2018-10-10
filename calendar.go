@@ -19,6 +19,7 @@ import (
 
 var (
 	credentialsFile string
+	matchCal        string
 )
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -160,10 +161,13 @@ func allCalendars(srv *calendar.Service) []*calendar.CalendarListEntry {
 func init() {
 	const (
 		defaultCredentialsFile = "credentials.json"
+		defaultMatchCal        = ".*"
 		credentialsFileUsage   = "pass -c=<credentialsFile> to read GCal credentials from"
+		matchCalUsage          = "pass -mc=<.*partCalendarName.*> to choose a calendar"
 	)
 
 	flag.StringVar(&credentialsFile, "c", defaultCredentialsFile, credentialsFileUsage)
+	flag.StringVar(&matchCal, "mc", defaultMatchCal, matchCalUsage)
 }
 
 func main() {
@@ -204,10 +208,13 @@ func main() {
 
 	// log.Printf("Total events: %d", len(events))
 	// log.Printf("Random event: %+v", events[sample])
+	// ".*reInvent.*"
 
-	calendar, err := findCalendar(calendars, ".*reInvent.*")
+	calendar, err := findCalendar(calendars, matchCal)
 	if err != nil {
 		log.Fatalf("No calendar found: %v", err)
+	} else {
+		log.Printf("Found calendar: %q", calendar.Summary)
 	}
 
 	// populateEvents(srv, calendarID, events)
