@@ -9,7 +9,7 @@ import (
 
 // Mon Jan 2 15:04:05 -0700 MST 2006
 const (
-	timeLayout  = "Monday, Jan 02, 3:04 PM -0700 MST 2006"
+	TimeLayout  = "Monday, Jan 02, 3:04 PM -0700 MST 2006"
 	timePostfix = "-0800 PST 2018"
 )
 
@@ -21,9 +21,15 @@ type Event struct {
 	End   time.Time
 }
 
+func CheckErr(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 // ParseTime returns time derived from "2006 Monday, Jan 02, 3:04 PM" template
 func ParseTime(in string) time.Time {
-	parsedTime, err := time.Parse(timeLayout, in)
+	parsedTime, err := time.Parse(TimeLayout, in)
 	if err != nil {
 		panic(err)
 	}
