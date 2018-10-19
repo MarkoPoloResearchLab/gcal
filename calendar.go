@@ -225,7 +225,7 @@ func parseFlags() {
 	listCommand.StringVar(&matchCal, "match", defaultMatchCal, matchCalUsage)
 
 	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
-	createCommand.StringVar(&eventTimeStr, "time", defaultTime, eventTimeUsage)
+	createCommand.StringVar(&eventTimeStr, "time", util.TimeLayout, eventTimeUsage)
 	createCommand.DurationVar(&eventDuration, "duration", defaultDuration, eventDurationUsage)
 	createCommand.StringVar(&eventCaption, "caption", defaultCaption, "Text message")
 
