@@ -213,11 +213,8 @@ func parseFlags() {
 		matchCalUsage          = "pass -mc=<.*partCalendarName.*> to choose a calendar, e.g. gcal "
 		profileNameUsage       = "Provide the name of the profile to identify the account"
 		showEventsUsage        = "Shows envents for a given calendar. defaults to false"
-		usage                  = "specify one of the following commands: list, create"
+		usage                  = "specify one of the following commands: profile, list, create"
 	)
-
-	// flag.StringVar(&credentialsFile, "c", defaultCredentialsFile, credentialsFileUsage)
-	// flag.StringVar(&matchCal, "mc", defaultMatchCal, matchCalUsage)
 
 	profileCommand := flag.NewFlagSet("profile", flag.ExitOnError)
 	profileCommand.StringVar(&credentialsFile, "c", defaultCredentialsFile, credentialsFileUsage)
@@ -251,21 +248,6 @@ func parseFlags() {
 			createCommand.Parse(os.Args[i:])
 		}
 	}
-
-	// switch os.Args[1] {
-	// case "profile":
-	// 	profileCommand.Parse(os.Args[2:])
-	// 	fmt.Printf("profileCommand args: %+v\n", profileCommand.Args())
-	// case "list":
-	// 	listCommand.Parse(os.Args[2:])
-	// case "create":
-	// 	createCommand.Parse(os.Args[2:])
-	// default:
-	// 	fmt.Printf("%q is not valid command.\n", os.Args[1])
-	// 	fmt.Println(usage)
-	// 	os.Exit(2)
-	// }
-
 }
 
 func main() {
@@ -294,29 +276,34 @@ func main() {
 		os.Exit(2)
 	}
 
-	switch os.Args[1] {
-	case "profile":
-	case "list":
-		log.Println("Calendars:")
-		for _, cal := range calendars {
-			log.Printf("%v: %v\n", cal.Id, cal.Summary)
-			if showEvents {
-				listEvents(srv, cal.Id)
+	for _, command := range flag.Args() {
+		switch command {
+		case "profile":
+			util.CreateDirIfNotExist(profileName)
+		case "list":
+			log.Println("Calendars:")
+			for _, cal := range calendars {
+				log.Printf("%v: %v\n", cal.Id, cal.Summary)
+				if showEvents {
+					listEvents(srv, cal.Id)
+				}
 			}
-		}
+		case "create":
+			calendar, err := findCalendar(calendars, matchCal)
+			if err != nil {
+				log.Fatalf("No calendar found: %v", err)
+			} else {
+				log.Printf("Found calendar: %q", calendar.Summary)
+			}
 
-	case "create":
-		calendar, err := findCalendar(calendars, matchCal)
-		if err != nil {
-			log.Fatalf("No calendar found: %v", err)
-		} else {
-			log.Printf("Found calendar: %q", calendar.Summary)
+			eventTime, err := time.Parse(util.TimeLayout, eventTimeStr)
+			util.CheckErr(err)
+			event := newEvent(eventCaption, eventTime, eventDuration)
+			htmLink, err := createEvent(srv, &calendar.Id, event)
+			util.CheckErr(err)
+
+			log.Printf("Event created: %q", htmLink)
 		}
-		// listEvents(srv, calendar.Id)
-		eventTime, err := time.Parse(util.TimeLayout, eventTimeStr)
-		util.CheckErr(err)
-		event := newEvent(eventCaption, eventTime, eventDuration)
-		createEvent(srv, &calendar.Id, event)
 	}
 
 	// parse.Parse("input/AWS reInvent 2018.html")

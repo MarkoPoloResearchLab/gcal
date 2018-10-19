@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -24,6 +25,15 @@ type Event struct {
 func CheckErr(err error) {
 	if err != nil {
 		panic(err)
+	}
+}
+
+func CreateDirIfNotExist(dir string) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
