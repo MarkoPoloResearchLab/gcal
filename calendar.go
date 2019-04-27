@@ -2,13 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"time"
+	"util"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -16,13 +19,33 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
+var (
+	credentialsFile string
+	matchCal        string
+	eventCaption    string
+	eventTime       time.Time
+	eventTimeStr    string
+	eventDuration   time.Duration
+	showEvents      bool
+	profileName     string
+)
+
+func tokenFileName() string {
+	credentialsFileName := strings.Split(credentialsFile, ".")[0]
+	var sb strings.Builder
+	sb.WriteString(credentialsFileName)
+	sb.WriteString("_token.json")
+
+	return sb.String()
+}
+
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
-	tokFile := "token.json"
-	tok, err := tokenFromFile(tokFile)
+	tokFileName := tokenFileName()
+	tok, err := tokenFromFile(tokFileName)
 	if err != nil {
 		tok = getTokenFromWeb(config)
-		saveToken(tokFile, tok)
+		saveToken(tokFileName, tok)
 	}
 	return config.Client(context.Background(), tok)
 }
@@ -152,8 +175,85 @@ func allCalendars(srv *calendar.Service) []*calendar.CalendarListEntry {
 	return calendars.Items
 }
 
+func newEvent(eventCaption string, eventTime time.Time, eventDuration time.Duration) *calendar.Event {
+	eventTimeEnd := eventTime.Add(eventDuration)
+	return &calendar.Event{
+		Summary: eventCaption,
+		Start: &calendar.EventDateTime{
+			DateTime: eventTime.Format("2006-01-02T15:04:05-08:00"),
+			TimeZone: "America/Los_Angeles",
+		},
+		End: &calendar.EventDateTime{
+			DateTime: eventTimeEnd.Format("2006-01-02T15:04:05-08:00"),
+			TimeZone: "America/Los_Angeles",
+		},
+	}
+}
+
+func createEvent(srv *calendar.Service, calendarID *string, event *calendar.Event) (string, error) {
+	e, err := srv.Events.Insert(*calendarID, event).Do()
+	if err != nil {
+		return "", err
+	}
+	return e.HtmlLink, nil
+}
+
+func parseFlags() {
+	const (
+		credentialsFileUsage   = "pass -c=<credentialsFile> to read GCal credentials from"
+		defaultCaption         = "Event caption placeholder"
+		defaultCredentialsFile = "credentials.json"
+		defaultDuration        = time.Duration(30 * time.Minute)
+		defaultMatchCal        = ".*"
+		defaultProfileName     = "default"
+		defaultShowEvents      = false
+		defaultTime            = "Time is required"
+		eventDurationUsage     = "A duration string is a sequence of decimal numbers, each with optional fraction and a unit suffix, such as \"-1.5h\" or \"2h45m\". Valid time units are \"s\", \"m\", \"h\". "
+		eventTimeUsage         = "Provide time in the format of Monday, Jan 02, 3:04 PM -0700 MST 2006"
+		matchCalUsage          = "pass -mc=<.*partCalendarName.*> to choose a calendar, e.g. gcal "
+		profileNameUsage       = "Provide the name of the profile to identify the account"
+		showEventsUsage        = "Shows envents for a given calendar. defaults to false"
+		usage                  = "specify one of the following commands: profile, list, create"
+	)
+
+	profileCommand := flag.NewFlagSet("profile", flag.ExitOnError)
+	profileCommand.StringVar(&credentialsFile, "c", defaultCredentialsFile, credentialsFileUsage)
+	profileCommand.StringVar(&profileName, "name", defaultProfileName, profileNameUsage)
+
+	listCommand := flag.NewFlagSet("list", flag.ExitOnError)
+	listCommand.BoolVar(&showEvents, "events", defaultShowEvents, showEventsUsage)
+	listCommand.StringVar(&matchCal, "match", defaultMatchCal, matchCalUsage)
+
+	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
+	createCommand.StringVar(&eventTimeStr, "time", util.TimeLayout, eventTimeUsage)
+	createCommand.DurationVar(&eventDuration, "duration", defaultDuration, eventDurationUsage)
+	createCommand.StringVar(&eventCaption, "caption", defaultCaption, "Text message")
+
+	flag.Parse()
+	fmt.Printf("other args: %+v\n", flag.Args())
+	if len(flag.Args()) == 0 {
+		fmt.Println(usage)
+		os.Exit(2)
+	}
+
+	for i, command := range flag.Args() {
+		switch command {
+		case "profile":
+			fmt.Printf("profileCommand flag args[%d:]: %+v\n", i+1, flag.Args()[i+1:])
+			profileCommand.Parse(flag.Args()[i+1:])
+		case "list":
+			fmt.Printf("listCommand flag args[%d:]: %+v\n", i+1, flag.Args()[i+1:])
+			listCommand.Parse(flag.Args()[i+1:])
+		case "create":
+			createCommand.Parse(os.Args[i:])
+		}
+	}
+}
+
 func main() {
-	b, err := ioutil.ReadFile("credentials.json")
+	parseFlags()
+
+	b, err := ioutil.ReadFile(credentialsFile)
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
@@ -170,13 +270,39 @@ func main() {
 		log.Fatalf("Unable to retrieve Calendar client: %v", err)
 	}
 
-	log.Println("Calendars:")
 	calendars := allCalendars(srv)
 	if len(calendars) == 0 {
 		log.Println("No calendars found.")
-	} else {
-		for _, cal := range calendars {
-			log.Printf("%v: %v\n", cal.Id, cal.Summary)
+		os.Exit(2)
+	}
+
+	for _, command := range flag.Args() {
+		switch command {
+		case "profile":
+			util.CreateDirIfNotExist(profileName)
+		case "list":
+			log.Println("Calendars:")
+			for _, cal := range calendars {
+				log.Printf("%v: %v\n", cal.Id, cal.Summary)
+				if showEvents {
+					listEvents(srv, cal.Id)
+				}
+			}
+		case "create":
+			calendar, err := findCalendar(calendars, matchCal)
+			if err != nil {
+				log.Fatalf("No calendar found: %v", err)
+			} else {
+				log.Printf("Found calendar: %q", calendar.Summary)
+			}
+
+			eventTime, err := time.Parse(util.TimeLayout, eventTimeStr)
+			util.CheckErr(err)
+			event := newEvent(eventCaption, eventTime, eventDuration)
+			htmLink, err := createEvent(srv, &calendar.Id, event)
+			util.CheckErr(err)
+
+			log.Printf("Event created: %q", htmLink)
 		}
 	}
 
@@ -188,15 +314,12 @@ func main() {
 
 	// log.Printf("Total events: %d", len(events))
 	// log.Printf("Random event: %+v", events[sample])
+	// ".*reInvent.*"
 
-	calendar, err := findCalendar(calendars, ".*reInvent.*")
-	if err != nil {
-		log.Fatalf("No calendar found: %v", err)
-	}
+	// createEvent(calendar.Id, time, title)
 
 	// populateEvents(srv, calendarID, events)
 
-	listEvents(srv, calendar.Id)
 	// deleteAllEvents(srv, calendarID)
 	// listEvents(srv, calendarID)
 }
